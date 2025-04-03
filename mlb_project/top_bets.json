@@ -1,0 +1,50 @@
+[
+    {
+        "Date": "2025-04-03",
+        "Game": "Baltimore Orioles vs Boston Red Sox",
+        "Bet Type": "Total 9.0",
+        "Bookmaker": "FanDuel",
+        "Odds": -118,
+        "Implied Prob": "54.13%",
+        "Model Prob": "88.29%",
+        "EV %": "151.42%",
+        "Units to Wager": "0.74",
+        "Money Line Bet": "",
+        "Total Bet": "OVER",
+        "Hits Bet": "",
+        "Strikeouts Bet": "",
+        "Pitcher Props Bet": ""
+    },
+    {
+        "Date": "2025-04-03",
+        "Game": "Baltimore Orioles vs Boston Red Sox",
+        "Bet Type": "Total 9.0",
+        "Bookmaker": "DraftKings",
+        "Odds": -118,
+        "Implied Prob": "54.13%",
+        "Model Prob": "88.29%",
+        "EV %": "151.42%",
+        "Units to Wager": "0.74",
+        "Money Line Bet": "",
+        "Total Bet": "OVER",
+        "Hits Bet": "",
+        "Strikeouts Bet": "",
+        "Pitcher Props Bet": ""
+    },
+    {
+        "Date": "2025-04-03",
+        "Game": "New York Yankees vs Arizona Diamondbacks",
+        "Bet Type": "Total 10.0",
+        "Bookmaker": "DraftKings",
+        "Odds": -108,
+        "Implied Prob": "51.92%",
+        "Model Prob": "58.30%",
+        "EV %": "70.57%",
+        "Units to Wager": "0.13",
+        "Money Line Bet": "",
+        "Total Bet": "OVER",
+        "Hits Bet": "",
+        "Strikeouts Bet": "",
+        "Pitcher Props Bet": ""
+    }
+]
