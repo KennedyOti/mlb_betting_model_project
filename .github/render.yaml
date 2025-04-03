@@ -1,9 +1,9 @@
 services:
-  - name: my-python-app
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.9"
+  - type: web
+    name: mlb_betting
+    env: python
     buildCommand: |
       pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt --no-cache-dir
-    startCommand: "python app.py"
+      pip install --only-binary=:all: numpy==1.21.2
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app  # or your start command
