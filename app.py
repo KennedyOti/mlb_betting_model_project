@@ -29,6 +29,7 @@ full_pitching_df = pd.read_csv("mlb_data/full_pitching_dataset.csv")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Utility functions
 def smart_team_match(api_team):
     match, score = process.extractOne(api_team, MODEL_TEAM_NAMES)
     return match if score >= 80 else api_team
@@ -96,7 +97,7 @@ def load_results():
     except:
         return []
 
-# Prediction models
+# Prediction functions
 def predict_moneyline(home_team, away_team):
     home_encoded = le_team.transform([home_team])[0]
     away_encoded = le_team.transform([away_team])[0]
@@ -145,6 +146,7 @@ def get_odds():
         logger.error(f"API Error: {e}")
         return []
 
+# Main Prediction Routine
 def run_daily_predictions():
     odds_data = get_odds()
     results = []
@@ -153,15 +155,14 @@ def run_daily_predictions():
     if odds_data:
         for game in odds_data:
             try:
-                home_team = smart_team_match(game.get('home_team', ''))
-                away_team = smart_team_match(game.get('away_team', ''))
+                home_team = smart_team_match(game['home_team'])
+                away_team = smart_team_match(game['away_team'])
                 game_df = pd.read_csv('mlb_data/mlb_games.csv')
                 row = game_df[(game_df['home_team_name'] == home_team) & (game_df['away_team_name'] == away_team)]
                 if row.empty:
                     continue
                 game_row = row.iloc[0]
                 venue = game_row.get('venue', 'Unknown')
-
                 pitcher_row = full_pitching_df[(full_pitching_df['home_team_name'] == home_team)]
                 pitcher_name = pitcher_row.iloc[0]['player_name'] if not pitcher_row.empty else 'Unknown'
                 pitcher_props_prob = predict_pitcher_props(away_team, 1.0, 1.5, 30)
@@ -170,38 +171,41 @@ def run_daily_predictions():
                 hits_prob = predict_hits(home_team, away_team, venue, 1.0, 0, 0, 0, 0)
                 strikeouts_prob = predict_strikeouts(home_team, away_team, venue, 1.0, 0, 0, 0, 0)
 
-                for bookmaker in game.get('bookmakers', []):
-                    bookmaker_name = bookmaker.get('title', '')
-                    for market in bookmaker.get('markets', []):
-                        market_key = market.get('key')
-                        for outcome in market.get('outcomes', []):
-                            try:
-                                odds = int(outcome.get('price', 0))
-                                implied = convert_odds_to_implied_prob(odds)
-                                key = (game['id'], market_key, bookmaker_name, outcome.get('name'), outcome.get('point', ''))
-                                if key in seen_keys:
+                for bookmaker in game['bookmakers']:
+                    bookmaker_name = bookmaker['title']
+                    seen_totals = set()
+                    added_moneyline = False
+
+                    for market in bookmaker['markets']:
+                        for outcome in market['outcomes']:
+                            odds = int(outcome.get('price', 0))
+                            implied = convert_odds_to_implied_prob(odds)
+                            key = (game['id'], market['key'], bookmaker_name, outcome.get('name'), outcome.get('point', ''))
+                            if key in seen_keys:
+                                continue
+                            seen_keys.add(key)
+
+                            if market['key'] == 'h2h' and not added_moneyline:
+                                model_prob = moneyline if outcome['name'] == home_team else 1 - moneyline
+                                ev = calculate_ev(model_prob, implied, odds)
+                                units = suggest_wager(model_prob, odds)
+                                results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", "Moneyline",
+                                                             bookmaker_name, odds, implied, model_prob, ev, units,
+                                                             money_line_bet=home_team if moneyline > 0.5 else away_team))
+                                added_moneyline = True
+
+                            elif market['key'] == 'totals':
+                                point = outcome.get('point')
+                                if point in seen_totals:
                                     continue
-                                seen_keys.add(key)
+                                seen_totals.add(point)
+                                model_prob = total
+                                ev = calculate_ev(model_prob, implied, odds)
+                                units = suggest_wager(model_prob, odds)
+                                results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", f"Total {point}",
+                                                             bookmaker_name, odds, implied, model_prob, ev, units,
+                                                             total_bet="OVER" if total > 0.5 else "UNDER"))
 
-                                if market_key == 'h2h':
-                                    model_prob = moneyline if outcome['name'] == home_team else 1 - moneyline
-                                    ev = calculate_ev(model_prob, implied, odds)
-                                    units = suggest_wager(model_prob, odds)
-                                    results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", "Moneyline",
-                                                                 bookmaker_name, odds, implied, model_prob, ev, units,
-                                                                 money_line_bet=home_team if moneyline > 0.5 else away_team))
-                                elif market_key == 'totals':
-                                    point = outcome.get('point')
-                                    model_prob = total
-                                    ev = calculate_ev(model_prob, implied, odds)
-                                    units = suggest_wager(model_prob, odds)
-                                    results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", f"Total {point}",
-                                                                 bookmaker_name, odds, implied, model_prob, ev, units,
-                                                                 total_bet="OVER" if total > 0.5 else "UNDER"))
-                            except Exception as inner_err:
-                                logger.error(f"Error processing outcome: {inner_err}")
-
-                # Add model predictions (no bookmaker odds for these yet)
                 results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", "Hits Bet", "Model", 100, 0.5, hits_prob,
                                              calculate_ev(hits_prob, 0.5, 100), suggest_wager(hits_prob, 100),
                                              hits_bet="OVER" if hits_prob > 0.5 else "UNDER"))
@@ -211,13 +215,13 @@ def run_daily_predictions():
                 results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", "Pitcher Props Bet", "Model", 100, 0.5, pitcher_props_prob,
                                              calculate_ev(pitcher_props_prob, 0.5, 100), suggest_wager(pitcher_props_prob, 100),
                                              pitcher_props_bet=pitcher_name))
-
             except Exception as e:
                 logger.error(f"Error processing game: {e}")
 
     save_to_json(results)
     save_top_ev_bets(results)
 
+# Routes
 @app.route('/')
 def index():
     data = load_results()
@@ -235,7 +239,7 @@ def handle_error(e):
     logger.error(str(e))
     return jsonify(error=str(e)), 500
 
-# Schedule
+# Schedule automatic daily prediction
 scheduler = BackgroundScheduler()
 scheduler.add_job(run_daily_predictions, 'interval', hours=24)
 scheduler.start()
