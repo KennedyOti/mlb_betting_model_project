@@ -29,7 +29,6 @@ full_pitching_df = pd.read_csv("mlb_data/full_pitching_dataset.csv")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Utility functions
 def smart_team_match(api_team):
     match, score = process.extractOne(api_team, MODEL_TEAM_NAMES)
     return match if score >= 80 else api_team
@@ -57,7 +56,8 @@ def sigmoid_from_line(predicted_value, betting_line, scaling_factor=1.5):
     return np.clip(1 / (1 + np.exp(-scaling_factor * diff)), 0.01, 0.99)
 
 def format_output(date, game, bet_type, bookmaker, odds, implied_prob, model_prob, ev, units,
-                  money_line_bet=None, total_bet=None, hits_bet=None, strikeouts_bet=None, pitcher_props_bet=None):
+                  money_line_bet=None, total_bet=None, hits_bet=None, strikeouts_bet=None, pitcher_props_bet=None,
+                  predicted_total=None):
     return {
         'Date': date.strftime('%Y-%m-%d'),
         'Game': game,
@@ -72,7 +72,8 @@ def format_output(date, game, bet_type, bookmaker, odds, implied_prob, model_pro
         'Total Bet': total_bet or '',
         'Hits Bet': hits_bet or '',
         'Strikeouts Bet': strikeouts_bet or '',
-        'Pitcher Props Bet': pitcher_props_bet or ''
+        'Pitcher Props Bet': pitcher_props_bet or '',
+        'Predicted Total': f"{predicted_total:.2f}" if predicted_total is not None else ''
     }
 
 def save_to_json(data, filename='output.json'):
@@ -97,7 +98,6 @@ def load_results():
     except:
         return []
 
-# Prediction functions
 def predict_moneyline(home_team, away_team):
     home_encoded = le_team.transform([home_team])[0]
     away_encoded = le_team.transform([away_team])[0]
@@ -110,7 +110,7 @@ def predict_total_runs(home_team, away_team):
         'away_team_encoded': le_team.transform([away_team])[0]
     }])
     total = total_runs_model.predict(df)[0]
-    return sigmoid_from_line(total, 8.5)
+    return total, sigmoid_from_line(total, 8.5)
 
 def predict_hits(team, opponent, venue, ip, bb, er, h, r):
     input_data = np.array([[le_opponent.transform([opponent])[0],
@@ -146,7 +146,6 @@ def get_odds():
         logger.error(f"API Error: {e}")
         return []
 
-# Main Prediction Routine
 def run_daily_predictions():
     odds_data = get_odds()
     results = []
@@ -165,9 +164,10 @@ def run_daily_predictions():
                 venue = game_row.get('venue', 'Unknown')
                 pitcher_row = full_pitching_df[(full_pitching_df['home_team_name'] == home_team)]
                 pitcher_name = pitcher_row.iloc[0]['player_name'] if not pitcher_row.empty else 'Unknown'
+
                 pitcher_props_prob = predict_pitcher_props(away_team, 1.0, 1.5, 30)
                 moneyline = predict_moneyline(home_team, away_team)
-                total = predict_total_runs(home_team, away_team)
+                total_raw, total_sigmoid = predict_total_runs(home_team, away_team)
                 hits_prob = predict_hits(home_team, away_team, venue, 1.0, 0, 0, 0, 0)
                 strikeouts_prob = predict_strikeouts(home_team, away_team, venue, 1.0, 0, 0, 0, 0)
 
@@ -199,13 +199,15 @@ def run_daily_predictions():
                                 if point in seen_totals:
                                     continue
                                 seen_totals.add(point)
-                                model_prob = total
+                                model_prob = total_sigmoid
                                 ev = calculate_ev(model_prob, implied, odds)
                                 units = suggest_wager(model_prob, odds)
                                 results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", f"Total {point}",
                                                              bookmaker_name, odds, implied, model_prob, ev, units,
-                                                             total_bet="OVER" if total > 0.5 else "UNDER"))
+                                                             total_bet="OVER" if model_prob > 0.5 else "UNDER",
+                                                             predicted_total=total_raw))
 
+                # Model-only predictions (optional, if still needed)
                 results.append(format_output(datetime.now(), f"{home_team} vs {away_team}", "Hits Bet", "Model", 100, 0.5, hits_prob,
                                              calculate_ev(hits_prob, 0.5, 100), suggest_wager(hits_prob, 100),
                                              hits_bet="OVER" if hits_prob > 0.5 else "UNDER"))
@@ -221,7 +223,6 @@ def run_daily_predictions():
     save_to_json(results)
     save_top_ev_bets(results)
 
-# Routes
 @app.route('/')
 def index():
     data = load_results()
@@ -241,7 +242,7 @@ def handle_error(e):
 
 # Schedule automatic daily prediction
 scheduler = BackgroundScheduler()
-scheduler.add_job(run_daily_predictions, 'interval', hours=24)
+scheduler.add_job(run_daily_predictions, 'interval', hours=1)
 scheduler.start()
 
 if __name__ == '__main__':

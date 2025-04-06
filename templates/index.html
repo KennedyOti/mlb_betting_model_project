@@ -107,6 +107,15 @@
     .model-prob-low {
       background: rgba(220, 53, 69, 0.2) !important;
     }
+
+    .total-badge {
+      font-size: 0.75rem;
+      background-color: #6c757d;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 50px;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
@@ -182,7 +191,14 @@
               <td class="ev-cell">{{ result['EV %'] }}</td>
               <td><span class="badge bg-primary">{{ result['Units to Wager'] }}</span></td>
               <td>{{ result['Money Line Bet'] }}</td>
-              <td>{{ result['Total Bet'] }}</td>
+              <td>
+                {% if result['Total Bet'] %}
+                  {{ result['Total Bet'] }}
+                  {% if result['Predicted Total'] %}
+                    <span class="total-badge">{{ result['Predicted Total'] }}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
               <td>{{ result['Hits Bet'] }}</td>
               <td>{{ result['Strikeouts Bet'] }}</td>
               <td>{{ result['Pitcher Props Bet'] }}</td>
