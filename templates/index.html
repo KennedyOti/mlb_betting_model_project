@@ -65,6 +65,7 @@
     .table-custom th {
       background: var(--accent-blue);
       border-bottom: 2px solid var(--primary-bg);
+      color: var(--text-light);
     }
 
     .positive-ev {
@@ -116,6 +117,10 @@
       border-radius: 50px;
       margin-left: 6px;
     }
+
+    .btn-warning {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -124,8 +129,18 @@
       <h1 class="text-center fw-bold mb-4">
         <i class="bi bi-graph-up-arrow me-2"></i>MLB Betting Model
       </h1>
-      <p style="color: white !important;" class="text-center text-muted mb-4">+EV predictions updated daily with AI models</p>
+      <p class="text-center text-muted mb-4" style="color: white !important;">+EV predictions updated daily with AI models</p>
 
+      <!-- Manual Prediction Button -->
+      <div class="text-center mb-4">
+        <form action="/run-now" method="post">
+          <button type="submit" class="btn btn-warning fw-bold">
+            <i class="bi bi-arrow-clockwise me-1"></i> Run Today's Predictions
+          </button>
+        </form>
+      </div>
+
+      <!-- Filter Form -->
       <form method="get" action="/">
         <div class="row g-3 mb-4">
           <div class="col-md-6">
@@ -153,6 +168,7 @@
         </div>
       </form>
 
+      <!-- Table Display -->
       <div class="table-wrapper">
         <table class="table table-custom table-dark table-hover align-middle">
           <thead>
