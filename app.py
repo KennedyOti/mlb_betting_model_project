@@ -5,7 +5,7 @@ from datetime import datetime
 from fuzzywuzzy import process
 
 app = Flask(__name__)
-API_KEY = 'f22cd4651da7f18126549e07566740c3'
+API_KEY = '660d6e7d9e30433ab657a4661f7b8520'
 
 # Load models
 hits_model = joblib.load("models/hits_model.pkl")
