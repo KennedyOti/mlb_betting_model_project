@@ -1,229 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MLB Betting Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
   <style>
     :root {
-      --primary-bg: linear-gradient(to bottom right, #f2f4f7, #bcceee);
-      --secondary-bg: #020a13;
+      --primary-bg: #0a1f3a;
+      --secondary-bg: #1a3a6a;
       --accent-blue: #2a5a9a;
-      --hover-blue: #345b9e;
       --text-light: #f8f9fa;
-      --success: #28a745;
-      --danger: #dc3545;
       --highlight: #ffd700;
     }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+    body {
       background: var(--primary-bg);
+      color: var(--text-light);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: var(--text-light);
-      overflow-x: hidden;
     }
 
-    .main-card {
-      background: var(--secondary-bg);
-      border-radius: 15px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-      padding: 40px;
-      margin: 30px auto;
-      width: 95%;
-      max-width: 98%;
+    .container {
+      padding-top: 50px;
     }
 
-    .form-select {
-      background-color: #1e2a3a;
-      color: var(--text-light);
-      border: 1px solid rgba(255,255,255,0.2);
+    h1 {
+      font-weight: 700;
     }
 
-    .form-select:focus {
-      border-color: var(--hover-blue);
-      background-color: #263d5c;
-      box-shadow: 0 0 0 0.2rem rgba(52, 91, 158, 0.4);
-      color: var(--text-light);
+    .btn {
+      transition: all 0.3s ease;
     }
 
-    option {
-      background-color: #1e2a3a;
-      color: var(--text-light);
+    .btn:hover {
+      transform: translateY(-2px);
     }
 
-    .table-custom {
+    .status-message {
       background: var(--secondary-bg);
       border-radius: 8px;
-      margin-top: 30px;
-    }
-
-    .table-custom th {
-      background: var(--accent-blue);
-      border-bottom: 2px solid var(--primary-bg);
-      color: var(--text-light);
-    }
-
-    .positive-ev {
-      background: rgba(40, 167, 69, 0.1) !important;
-      border-left: 4px solid var(--success);
-    }
-
-    .negative-ev {
-      background: rgba(220, 53, 69, 0.1) !important;
-      border-left: 4px solid var(--danger);
-    }
-
-    .top-ev-row {
-      background: linear-gradient(to right, #002244, #004488);
-      border-left: 4px solid var(--highlight);
-      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-    }
-
-    .moneyline-highlight {
-      background: rgba(255, 215, 0, 0.1);
-      border-left: 3px solid var(--highlight);
-    }
-
-    .badge {
-      font-size: 0.9rem;
-    }
-
-    .ev-cell {
-      font-weight: bold;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-    }
-
-    .model-prob-high {
-      background: rgba(40, 167, 69, 0.2) !important;
-    }
-
-    .model-prob-low {
-      background: rgba(220, 53, 69, 0.2) !important;
-    }
-
-    .total-badge {
-      font-size: 0.75rem;
-      background-color: #6c757d;
-      color: white;
-      padding: 2px 6px;
-      border-radius: 50px;
-      margin-left: 6px;
-    }
-
-    .btn-warning {
-      font-weight: bold;
+      padding: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="container-fluid px-4">
-    <div class="main-card">
-      <h1 class="text-center fw-bold mb-4">
-        <i class="bi bi-graph-up-arrow me-2"></i>MLB Betting Model
-      </h1>
-      <p class="text-center text-muted mb-4" style="color: white !important;">+EV predictions updated daily with AI models</p>
-
-      <!-- Manual Prediction Button -->
-      <div class="text-center mb-4">
-        <form action="/run-now" method="post">
-          <button type="submit" class="btn btn-warning fw-bold">
-            <i class="bi bi-arrow-clockwise me-1"></i> Run Today's Predictions
-          </button>
-        </form>
-      </div>
-
-      <!-- Filter Form -->
-      <form method="get" action="/">
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <label for="bookmaker" class="form-label">Bookmaker</label>
-            <select name="bookmaker" id="bookmaker" class="form-select" onchange="this.form.submit()">
-              <option value="">All</option>
-              {% for bookmaker in bookmakers %}
-              <option value="{{ bookmaker }}" {% if request.args.get('bookmaker') == bookmaker %}selected{% endif %}>
-                {{ bookmaker.capitalize() }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label for="bet_type" class="form-label">Bet Type</label>
-            <select name="bet_type" id="bet_type" class="form-select" onchange="this.form.submit()">
-              <option value="">All</option>
-              {% for bet_type in bet_types %}
-              <option value="{{ bet_type }}" {% if request.args.get('bet_type') == bet_type %}selected{% endif %}>
-                {{ bet_type.capitalize() }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
+  <div class="container">
+    <h1><i class="bi bi-baseball me-2"></i>MLB Betting Dashboard</h1>
+    <div class="status-message mt-4">
+      <p class="mb-0">Welcome! Our app provides real-time MLB betting recommendations.</p>
+    </div>
+    <div class="d-flex gap-3 mt-4 flex-wrap">
+      <a href="{{ url_for('results') }}" class="btn btn-primary">
+        <i class="bi bi-table me-1"></i>View All Bets
+      </a>
+      <a href="{{ url_for('top_bets') }}" class="btn btn-warning text-dark">
+        <i class="bi bi-stars me-1"></i>Top 3 EV% Bets
+      </a>
+      <form action="{{ url_for('run_now') }}" method="post">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh Data Now
+        </button>
       </form>
-
-      <!-- Table Display -->
-      <div class="table-wrapper">
-        <table class="table table-custom table-dark table-hover align-middle">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Game</th>
-              <th>Bet Type</th>
-              <th>Bookmaker</th>
-              <th>Odds</th>
-              <th>Implied Prob</th>
-              <th>Model Prob</th>
-              <th>EV %</th>
-              <th>Units</th>
-              <th>Moneyline</th>
-              <th>Total</th>
-              <th>Hits</th>
-              <th>Strikeouts</th>
-              <th>Pitcher Prop</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% set top_ev = (results | sort(attribute='EV %', reverse=True))[:3] %}
-            {% for result in results %}
-            {% set is_top = result in top_ev %}
-            {% set model_prob = result['Model Prob'].rstrip('%') | float %}
-            <tr class="{% if result['EV %']|float > 0 %}positive-ev{% else %}negative-ev{% endif %} {% if is_top %}top-ev-row{% endif %}">
-              <td>{{ result['Date'] }}</td>
-              <td class="{% if result['Bet Type'] == 'Moneyline' %}moneyline-highlight{% endif %}">{{ result['Game'] }}</td>
-              <td>
-                <span class="badge bg-{% if result['EV %']|float > 0 %}success{% else %}danger{% endif %}">{{ result['Bet Type'] }}</span>
-              </td>
-              <td>{{ result['Bookmaker'] }}</td>
-              <td>{{ result['Odds'] }}</td>
-              <td>{{ result['Implied Prob'] }}</td>
-              <td class="{% if model_prob >= 70 %}model-prob-high{% else %}model-prob-low{% endif %}">{{ result['Model Prob'] }}</td>
-              <td class="ev-cell">{{ result['EV %'] }}</td>
-              <td><span class="badge bg-primary">{{ result['Units to Wager'] }}</span></td>
-              <td>{{ result['Money Line Bet'] }}</td>
-              <td>
-                {% if result['Total Bet'] %}
-                  {{ result['Total Bet'] }}
-                  {% if result['Predicted Total'] %}
-                    <span class="total-badge">{{ result['Predicted Total'] }}</span>
-                  {% endif %}
-                {% endif %}
-              </td>
-              <td>{{ result['Hits Bet'] }}</td>
-              <td>{{ result['Strikeouts Bet'] }}</td>
-              <td>{{ result['Pitcher Props Bet'] }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
