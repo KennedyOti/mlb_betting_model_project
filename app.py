@@ -1,13 +1,19 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_caching import Cache
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 import joblib, numpy as np, pandas as pd, json, os, logging, requests
 from datetime import datetime, timedelta
 from fuzzywuzzy import process
 import xgboost, sklearn
+import pytz
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 API_KEY = '660d6e7d9e30433ab657a4661f7b8520'
+
+# Define Eastern Time timezone
+eastern_tz = pytz.timezone('America/New_York')
 
 # Configure Flask-Caching
 cache_config = {
@@ -17,16 +23,22 @@ cache_config = {
 app.config.from_mapping(cache_config)
 cache = Cache(app)
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-        logging.FileHandler('mlb_app.log'),
-        logging.StreamHandler()
-    ]
-)
+# Setup logging with Eastern Time
+class EasternTimeFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        dt = datetime.fromtimestamp(record.created, tz=eastern_tz)
+        if datefmt:
+            return dt.strftime(datefmt)
+        return dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = EasternTimeFormatter('%(asctime)s %(levelname)s %(message)s')
+file_handler = RotatingFileHandler('mlb_app.log', maxBytes=1000000, backupCount=5)
+file_handler.setFormatter(formatter)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.handlers = [file_handler, stream_handler]
 logger.info(f"XGBoost version: {xgboost.__version__}")
 logger.info(f"scikit-learn version: {sklearn.__version__}")
 
@@ -72,11 +84,11 @@ def suggest_wager(model_prob, odds, base_unit=1.0, max_units=3.0):
 def sigmoid_from_line(predicted, line, scaling=1.5):
     return np.clip(1 / (1 + np.exp(-scaling * (predicted - line))), 0.01, 0.99)
 
-def format_output(date, game, bet_type, bookmaker, odds, implied, model_prob, ev, units,
+def format_output(commence_time, game, bet_type, bookmaker, odds, implied, model_prob, ev, units,
                   money_line_bet=None, total_bet=None, hits_bet=None, strikeouts_bet=None,
                   pitcher_props_bet=None, predicted_total=None):
     return {
-        'Date': date.strftime('%Y-%m-%d'),
+        'Date': commence_time.strftime('%Y-%m-%d %I:%M %p'),
         'Game': game,
         'Bet Type': bet_type,
         'Bookmaker': bookmaker,
@@ -91,7 +103,7 @@ def format_output(date, game, bet_type, bookmaker, odds, implied, model_prob, ev
         'Strikeouts Bet': strikeouts_bet or '',
         'Pitcher Props Bet': pitcher_props_bet or '',
         'Predicted Total': f"{predicted_total:.2f}" if predicted_total else '',
-        'Timestamp': date.isoformat()
+        'Timestamp': commence_time.isoformat()
     }
 
 def save_to_json(data, filename='output.json'):
@@ -178,6 +190,14 @@ def run_daily_predictions():
             away = smart_team_match(game['away_team'])
             logger.debug(f"Processing game: {home} vs {away}")
 
+            # Handle commence_time with fallback
+            try:
+                utc_time = datetime.fromisoformat(game['commence_time'].replace('Z', '+00:00'))
+                commence_time = utc_time.astimezone(eastern_tz)
+            except (KeyError, ValueError) as e:
+                logger.warning(f"No valid commence_time for {home} vs {away}: {e}. Using current time.")
+                commence_time = datetime.now(eastern_tz)
+
             row = game_df[(game_df['home_team_name'] == home) & (game_df['away_team_name'] == away)]
             if row.empty:
                 logger.warning(f"No game data found for {home} vs {away} in mlb_games.csv")
@@ -211,7 +231,7 @@ def run_daily_predictions():
                             model_prob = moneyline if outcome['name'] == home else 1 - moneyline
                             ev = calculate_ev(model_prob, implied, odds)
                             units = suggest_wager(model_prob, odds)
-                            results.append(format_output(datetime.now(), f"{home} vs {away}", "Moneyline", bm, odds, implied, model_prob, ev, units, money_line_bet=home if moneyline > 0.5 else away))
+                            results.append(format_output(commence_time, f"{home} vs {away}", "Moneyline", bm, odds, implied, model_prob, ev, units, money_line_bet=home if moneyline > 0.5 else away))
                             added_ml = True
 
                         elif market['key'] == 'totals':
@@ -220,11 +240,11 @@ def run_daily_predictions():
                             seen_points.add(point)
                             ev = calculate_ev(total_sigmoid, implied, odds)
                             units = suggest_wager(total_sigmoid, odds)
-                            results.append(format_output(datetime.now(), f"{home} vs {away}", f"Total {point}", bm, odds, implied, total_sigmoid, ev, units, total_bet="OVER" if total_sigmoid > 0.5 else "UNDER", predicted_total=total_raw))
+                            results.append(format_output(commence_time, f"{home} vs {away}", f"Total {point}", bm, odds, implied, total_sigmoid, ev, units, total_bet="OVER" if total_sigmoid > 0.5 else "UNDER", predicted_total=total_raw))
 
-            results.append(format_output(datetime.now(), f"{home} vs {away}", "Hits Bet", "Model", 100, 0.5, hits_prob, calculate_ev(hits_prob, 0.5, 100), suggest_wager(hits_prob, 100), hits_bet="OVER" if hits_prob > 0.5 else "UNDER"))
-            results.append(format_output(datetime.now(), f"{home} vs {away}", "Strikeouts Bet", "Model", 100, 0.5, strikeouts_prob, calculate_ev(strikeouts_prob, 0.5, 100), suggest_wager(strikeouts_prob, 100), strikeouts_bet="OVER" if strikeouts_prob > 0.5 else "UNDER"))
-            results.append(format_output(datetime.now(), f"{home} vs {away}", "Pitcher Props Bet", "Model", 100, 0.5, pitcher_props_prob, calculate_ev(pitcher_props_prob, 0.5, 100), suggest_wager(pitcher_props_prob, 100), pitcher_props_bet=pitcher_name))
+            results.append(format_output(commence_time, f"{home} vs {away}", "Hits Bet", "Model", 100, 0.5, hits_prob, calculate_ev(hits_prob, 0.5, 100), suggest_wager(hits_prob, 100), hits_bet="OVER" if hits_prob > 0.5 else "UNDER"))
+            results.append(format_output(commence_time, f"{home} vs {away}", "Strikeouts Bet", "Model", 100, 0.5, strikeouts_prob, calculate_ev(strikeouts_prob, 0.5, 100), suggest_wager(strikeouts_prob, 100), strikeouts_bet="OVER" if strikeouts_prob > 0.5 else "UNDER"))
+            results.append(format_output(commence_time, f"{home} vs {away}", "Pitcher Props Bet", "Model", 100, 0.5, pitcher_props_prob, calculate_ev(pitcher_props_prob, 0.5, 100), suggest_wager(pitcher_props_prob, 100), pitcher_props_bet=pitcher_name))
         except Exception as e:
             logger.error(f"Game error for {home} vs {away}: {e}")
             continue
@@ -244,19 +264,23 @@ def results():
     cached_results = cache.get('predictions')
     last_updated = None
     if cached_results:
-        last_updated = max(datetime.fromisoformat(r['Timestamp']) for r in cached_results)
-        if datetime.now() - last_updated < timedelta(minutes=5):
-            logger.info("Serving cached results.")
-            data = cached_results
-        else:
-            logger.info("Cached results stale. Fetching new data.")
+        try:
+            last_updated = max(datetime.fromisoformat(r['Timestamp']) for r in cached_results)
+            if datetime.now(eastern_tz) - last_updated < timedelta(minutes=5):
+                logger.info("Serving cached results.")
+                data = cached_results
+            else:
+                logger.info("Cached results stale. Fetching new data.")
+                data = run_daily_predictions()
+        except Exception as e:
+            logger.error(f"Error processing cached results: {e}")
             data = run_daily_predictions()
     else:
         logger.info("No cached results. Fetching new data.")
         data = run_daily_predictions()
 
-    today = datetime.now().strftime('%Y-%m-%d')
-    data = [r for r in data if r['Date'] >= today]
+    today = datetime.now(eastern_tz).strftime('%Y-%m-%d')
+    data = [r for r in data if r['Date'].startswith(today)]
     bookmaker = request.args.get('bookmaker')
     bet_type = request.args.get('bet_type')
     if bookmaker:
@@ -271,19 +295,23 @@ def top_bets():
     cached_results = cache.get('predictions')
     last_updated = None
     if cached_results:
-        last_updated = max(datetime.fromisoformat(r['Timestamp']) for r in cached_results)
-        if datetime.now() - last_updated < timedelta(minutes=5):
-            logger.info("Serving cached top bets.")
-            data = cached_results
-        else:
-            logger.info("Cached top bets stale. Fetching new data.")
+        try:
+            last_updated = max(datetime.fromisoformat(r['Timestamp']) for r in cached_results)
+            if datetime.now(eastern_tz) - last_updated < timedelta(minutes=5):
+                logger.info("Serving cached top bets.")
+                data = cached_results
+            else:
+                logger.info("Cached top bets stale. Fetching new data.")
+                data = run_daily_predictions()
+        except Exception as e:
+            logger.error(f"Error processing cached top bets: {e}")
             data = run_daily_predictions()
     else:
         logger.info("No cached top bets. Fetching new data.")
         data = run_daily_predictions()
 
-    today = datetime.now().strftime('%Y-%m-%d')
-    data = [r for r in data if r['Date'] >= today]
+    today = datetime.now(eastern_tz).strftime('%Y-%m-%d')
+    data = [r for r in data if r['Date'].startswith(today)]
     data = sorted(data, key=lambda x: float(x['EV %'].rstrip('%')), reverse=True)[:3]
     return render_template("topbets.html", results=data)
 
@@ -292,7 +320,7 @@ def run_now():
     if request.method == 'POST':
         run_daily_predictions()
         return redirect(url_for('results'))
-    return redirect(url_for('index'))  # Handle GET requests gracefully
+    return redirect(url_for('index'))
 
 @app.route('/favicon.ico')
 def favicon():
@@ -304,17 +332,17 @@ def handle_error(e):
     return jsonify(error=str(e)), 500
 
 # Start scheduler
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone=eastern_tz)
 scheduler_started = False
 
 def start_scheduler():
     global scheduler_started
     if not scheduler_started:
         try:
-            scheduler.add_job(run_daily_predictions, 'interval', minutes=15)
+            scheduler.add_job(run_daily_predictions, IntervalTrigger(minutes=15))
             scheduler.start()
             scheduler_started = True
-            logger.info("Scheduler started successfully for 15-minute intervals.")
+            logger.info("Scheduler started successfully for 15-minute intervals in Eastern Time.")
         except Exception as e:
             logger.error(f"Scheduler failed to start: {e}")
 
