@@ -472,3 +472,125 @@
 2025-04-16 03:42:45,213 INFO Serving cached results.
 2025-04-16 03:42:46,750 INFO Serving cached results.
 2025-04-16 03:42:49,604 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 13:53:39,709 INFO XGBoost version: 3.0.0
+2025-04-23 13:53:39,713 INFO scikit-learn version: 1.6.1
+2025-04-23 13:53:41,053 INFO All models and data loaded successfully.
+2025-04-23 14:09:10,504 INFO XGBoost version: 3.0.0
+2025-04-23 14:09:10,506 INFO scikit-learn version: 1.6.1
+2025-04-23 14:09:11,427 INFO All models and data loaded successfully.
+2025-04-23 14:09:19,829 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:09:21,055 INFO Starting real-time predictions.
+2025-04-23 14:09:22,262 INFO Successfully fetched odds data.
+2025-04-23 14:09:22,267 INFO API requests remaining: 99467
+2025-04-23 14:09:22,272 INFO Cleared old output.json
+2025-04-23 14:09:22,281 INFO Processing 23 games from API.
+2025-04-23 14:09:22,427 INFO Loaded mlb_games.csv with 12022 records.
+2025-04-23 14:09:22,515 INFO Processing game: Atlanta Braves vs St. Louis Cardinals (API ID: f2d2fa2ff148f0851adf67c3e0b85cde)
+2025-04-23 14:09:22,792 INFO Processing game: New York Mets vs Philadelphia Phillies (API ID: 6b4883328f4a245683778798c96a4507)
+2025-04-23 14:09:22,938 INFO Processing game: Miami Marlins vs Cincinnati Reds (API ID: 93a8b6ba334843b0d3598055df120325)
+2025-04-23 14:09:23,064 INFO Processing game: Cleveland Guardians vs New York Yankees (API ID: 982e5e1567db3e27818777ca123b1050)
+2025-04-23 14:09:23,199 INFO Processing game: Detroit Tigers vs San Diego Padres (API ID: 5f0fbaf98c6040fcc8391a07057f8662)
+2025-04-23 14:09:23,331 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 2bd592abe8198d74b8ba510b61991ecf)
+2025-04-23 14:09:23,467 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: e939b69be6d14bcb2ce772ee3367d1bc)
+2025-04-23 14:09:23,623 INFO Processing game: Chicago Cubs vs Los Angeles Dodgers (API ID: ea91bf86a3db6fab18aa8c8901e1abd6)
+2025-04-23 14:09:23,744 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: d8e7f4727dc4ea37fe6ec00ddfb62524)
+2025-04-23 14:09:23,869 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: ff3cc6ac8d0497bad078f6705e8e7b0d)
+2025-04-23 14:09:23,996 INFO Processing game: Houston Astros vs Toronto Blue Jays (API ID: 153a13f9ca97e171fb373093a85bfaf0)
+2025-04-23 14:09:24,108 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: f7c7b29fa56ba1d7f42b30da4a803719)
+2025-04-23 14:09:24,240 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: c9ce065ef126cf007b022b10d497534a)
+2025-04-23 14:09:24,252 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:09:24,351 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 70971dc7059da653d634c8151e0d5eee)
+2025-04-23 14:09:24,494 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: 6e4b11acf5f2e089578fc040b8759220)
+2025-04-23 14:09:24,622 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: f07dd57af5bb52778c2f2d82dfa25314)
+2025-04-23 14:09:24,766 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: c2b4fef4accb2edc48fcc6f65576715d)
+2025-04-23 14:09:24,891 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: 1dc14f427e9c993078a47de519d79bec)
+2025-04-23 14:09:25,019 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 04b93fedb20aa2e247a5b250870d33a6)
+2025-04-23 14:09:25,150 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 83d703410f2a99e6a3936e1ea483eac3)
+2025-04-23 14:09:25,274 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: 0be569712da9b45120bbc3fa709c7dc0)
+2025-04-23 14:09:25,424 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: 4fa9772d78ceafbd3c0dbc4e8d2e13d4)
+2025-04-23 14:09:25,434 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:09:25,537 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: f9e95a3b308ddfbbb42d31db3dd131e8)
+2025-04-23 14:09:25,672 ERROR Unmatched games: Arizona Diamondbacks vs Tampa Bay Rays, Arizona Diamondbacks vs Tampa Bay Rays
+2025-04-23 14:09:25,787 INFO Saved 133 records to mlb_project/output.json
+2025-04-23 14:09:25,798 INFO Generated 133 predictions.
+2025-04-23 14:09:25,867 INFO Serving cached results.
+2025-04-23 14:09:29,436 INFO Serving cached results.
+2025-04-23 14:09:29,735 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:24:47,890 INFO No cached results. Fetching new data.
+2025-04-23 14:24:47,894 INFO Starting real-time predictions.
+2025-04-23 14:24:49,341 INFO Successfully fetched odds data.
+2025-04-23 14:24:49,345 INFO API requests remaining: 99465
+2025-04-23 14:24:49,371 INFO Cleared old output.json
+2025-04-23 14:24:49,373 INFO Processing 23 games from API.
+2025-04-23 14:24:49,488 INFO Loaded mlb_games.csv with 12022 records.
+2025-04-23 14:24:49,595 INFO Processing game: Atlanta Braves vs St. Louis Cardinals (API ID: f2d2fa2ff148f0851adf67c3e0b85cde)
+2025-04-23 14:24:49,768 INFO Processing game: New York Mets vs Philadelphia Phillies (API ID: 6b4883328f4a245683778798c96a4507)
+2025-04-23 14:24:49,910 INFO Processing game: Miami Marlins vs Cincinnati Reds (API ID: 93a8b6ba334843b0d3598055df120325)
+2025-04-23 14:24:50,032 INFO Processing game: Cleveland Guardians vs New York Yankees (API ID: 982e5e1567db3e27818777ca123b1050)
+2025-04-23 14:24:50,166 INFO Processing game: Detroit Tigers vs San Diego Padres (API ID: 5f0fbaf98c6040fcc8391a07057f8662)
+2025-04-23 14:24:50,287 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 2bd592abe8198d74b8ba510b61991ecf)
+2025-04-23 14:24:50,409 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: e939b69be6d14bcb2ce772ee3367d1bc)
+2025-04-23 14:24:50,553 INFO Processing game: Chicago Cubs vs Los Angeles Dodgers (API ID: ea91bf86a3db6fab18aa8c8901e1abd6)
+2025-04-23 14:24:50,672 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: d8e7f4727dc4ea37fe6ec00ddfb62524)
+2025-04-23 14:24:50,796 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: ff3cc6ac8d0497bad078f6705e8e7b0d)
+2025-04-23 14:24:50,928 INFO Processing game: Houston Astros vs Toronto Blue Jays (API ID: 153a13f9ca97e171fb373093a85bfaf0)
+2025-04-23 14:24:51,065 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: f7c7b29fa56ba1d7f42b30da4a803719)
+2025-04-23 14:24:51,192 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: c9ce065ef126cf007b022b10d497534a)
+2025-04-23 14:24:51,198 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:24:51,292 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 70971dc7059da653d634c8151e0d5eee)
+2025-04-23 14:24:51,425 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: 6e4b11acf5f2e089578fc040b8759220)
+2025-04-23 14:24:51,549 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: f07dd57af5bb52778c2f2d82dfa25314)
+2025-04-23 14:24:51,673 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: c2b4fef4accb2edc48fcc6f65576715d)
+2025-04-23 14:24:51,803 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: 1dc14f427e9c993078a47de519d79bec)
+2025-04-23 14:24:51,928 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 04b93fedb20aa2e247a5b250870d33a6)
+2025-04-23 14:24:52,070 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 83d703410f2a99e6a3936e1ea483eac3)
+2025-04-23 14:24:52,189 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: 0be569712da9b45120bbc3fa709c7dc0)
+2025-04-23 14:24:52,345 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: 4fa9772d78ceafbd3c0dbc4e8d2e13d4)
+2025-04-23 14:24:52,353 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:24:52,504 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: f9e95a3b308ddfbbb42d31db3dd131e8)
+2025-04-23 14:24:52,572 ERROR Unmatched games: Arizona Diamondbacks vs Tampa Bay Rays, Arizona Diamondbacks vs Tampa Bay Rays
+2025-04-23 14:24:52,617 INFO Saved 133 records to mlb_project/output.json
+2025-04-23 14:24:52,619 INFO Generated 133 predictions.
+2025-04-23 14:24:54,418 INFO Serving cached results.
+2025-04-23 14:24:57,689 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:28:43,427 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:28:44,110 INFO Serving cached results.
+2025-04-23 14:28:44,523 INFO Serving cached results.
+2025-04-23 14:28:46,001 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:53:32,334 INFO No cached results. Fetching new data.
+2025-04-23 14:53:32,353 INFO Starting real-time predictions.
+2025-04-23 14:53:33,619 INFO Successfully fetched odds data.
+2025-04-23 14:53:33,621 INFO API requests remaining: 99459
+2025-04-23 14:53:33,625 INFO Cleared old output.json
+2025-04-23 14:53:33,629 INFO Processing 22 games from API.
+2025-04-23 14:53:33,825 INFO Loaded mlb_games.csv with 12022 records.
+2025-04-23 14:53:34,107 INFO Processing game: New York Mets vs Philadelphia Phillies (API ID: 6b4883328f4a245683778798c96a4507)
+2025-04-23 14:53:34,775 INFO Processing game: Miami Marlins vs Cincinnati Reds (API ID: 93a8b6ba334843b0d3598055df120325)
+2025-04-23 14:53:34,926 INFO Processing game: Cleveland Guardians vs New York Yankees (API ID: 982e5e1567db3e27818777ca123b1050)
+2025-04-23 14:53:35,136 INFO Processing game: Detroit Tigers vs San Diego Padres (API ID: 5f0fbaf98c6040fcc8391a07057f8662)
+2025-04-23 14:53:35,322 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 2bd592abe8198d74b8ba510b61991ecf)
+2025-04-23 14:53:35,461 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: e939b69be6d14bcb2ce772ee3367d1bc)
+2025-04-23 14:53:35,973 INFO Processing game: Chicago Cubs vs Los Angeles Dodgers (API ID: ea91bf86a3db6fab18aa8c8901e1abd6)
+2025-04-23 14:53:36,137 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: d8e7f4727dc4ea37fe6ec00ddfb62524)
+2025-04-23 14:53:36,278 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: ff3cc6ac8d0497bad078f6705e8e7b0d)
+2025-04-23 14:53:36,526 INFO Processing game: Houston Astros vs Toronto Blue Jays (API ID: 153a13f9ca97e171fb373093a85bfaf0)
+2025-04-23 14:53:36,846 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: f7c7b29fa56ba1d7f42b30da4a803719)
+2025-04-23 14:53:36,990 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: c9ce065ef126cf007b022b10d497534a)
+2025-04-23 14:53:37,000 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:53:37,090 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 70971dc7059da653d634c8151e0d5eee)
+2025-04-23 14:53:37,303 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: 6e4b11acf5f2e089578fc040b8759220)
+2025-04-23 14:53:37,627 INFO Processing game: Minnesota Twins vs Chicago White Sox (API ID: f07dd57af5bb52778c2f2d82dfa25314)
+2025-04-23 14:53:37,906 INFO Processing game: Boston Red Sox vs Seattle Mariners (API ID: c2b4fef4accb2edc48fcc6f65576715d)
+2025-04-23 14:53:38,045 INFO Processing game: Kansas City Royals vs Colorado Rockies (API ID: 1dc14f427e9c993078a47de519d79bec)
+2025-04-23 14:53:38,218 INFO Processing game: San Francisco Giants vs Milwaukee Brewers (API ID: 04b93fedb20aa2e247a5b250870d33a6)
+2025-04-23 14:53:38,649 INFO Processing game: Washington Nationals vs Baltimore Orioles (API ID: 83d703410f2a99e6a3936e1ea483eac3)
+2025-04-23 14:53:38,918 INFO Processing game: Los Angeles Angels vs Pittsburgh Pirates (API ID: 0be569712da9b45120bbc3fa709c7dc0)
+2025-04-23 14:53:39,092 INFO Processing game: Arizona Diamondbacks vs Tampa Bay Rays (API ID: 4fa9772d78ceafbd3c0dbc4e8d2e13d4)
+2025-04-23 14:53:39,105 WARNING No game data found for Arizona Diamondbacks vs Tampa Bay Rays in mlb_games.csv
+2025-04-23 14:53:39,219 INFO Processing game: Oakland Athletics vs Texas Rangers (API ID: f9e95a3b308ddfbbb42d31db3dd131e8)
+2025-04-23 14:53:39,275 ERROR Unmatched games: Arizona Diamondbacks vs Tampa Bay Rays, Arizona Diamondbacks vs Tampa Bay Rays
+2025-04-23 14:53:39,318 INFO Saved 126 records to mlb_project/output.json
+2025-04-23 14:53:39,323 INFO Generated 126 predictions.
+2025-04-23 14:53:41,034 INFO Serving cached results.
+2025-04-23 14:53:44,420 ERROR 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-04-23 14:53:46,888 INFO Serving cached results.

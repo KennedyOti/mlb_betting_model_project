@@ -230,7 +230,7 @@
       </div>
     {% else %}
       <div class="alert alert-warning mt-4">
-        No betting recommendations available at this moment. The system is fetching the latest odds—please try refreshing in a few seconds or click below to refresh manually.
+        No betting recommendations available. Possible issues: API quota exceeded, no games scheduled, or data mismatch. Please try refreshing or contact support if the issue persists.
         <form action="{{ url_for('run_now') }}" method="post" class="mt-2">
           <button type="submit" class="btn btn-success btn-sm">Refresh Now</button>
         </form>

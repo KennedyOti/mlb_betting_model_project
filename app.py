@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_caching import Cache
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import joblib, numpy as np, pandas as pd, json, os, logging, requests
+import joblib, numpy as np, pandas as pd, json, os, logging, requests, time
 from datetime import datetime, timedelta
 from fuzzywuzzy import process
 import xgboost, sklearn
@@ -62,17 +62,36 @@ except Exception as e:
 # --- Utils ---
 def smart_team_match(api_team):
     match, score = process.extractOne(api_team, MODEL_TEAM_NAMES)
-    return match if score >= 80 else api_team
+    if score < 80:
+        logger.warning(f"Low match score for '{api_team}': matched '{match}' with score {score}")
+        # Manual mapping for known discrepancies
+        manual_mapping = {
+            "NY Yankees": "New York Yankees",
+            "Chi White Sox": "Chicago White Sox",
+            "Chi Cubs": "Chicago Cubs",
+            "LA Dodgers": "Los Angeles Dodgers",
+            "LA Angels": "Los Angeles Angels",
+            # Add more as needed
+        }
+        match = manual_mapping.get(api_team, match)
+    return match
 
 def convert_odds_to_implied_prob(odds):
+    if not isinstance(odds, (int, float)) or odds == 0:
+        logger.warning(f"Invalid odds value: {odds}. Returning default probability.")
+        return 0.5
     return 100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)
 
 def calculate_ev(model_prob, implied_prob, odds):
+    if not isinstance(odds, (int, float)) or odds == 0:
+        logger.warning(f"Invalid odds for EV calculation: {odds}. Returning 0 EV.")
+        return 0.0
     decimal_odds = (odds / 100) + 1 if odds > 0 else (100 / -odds) + 1
     return (model_prob * decimal_odds) - (1 - model_prob)
 
 def suggest_wager(model_prob, odds, base_unit=1.0, max_units=3.0):
-    if odds == 0:
+    if not isinstance(odds, (int, float)) or odds == 0:
+        logger.warning(f"Invalid odds for wager calculation: {odds}. Returning 0 units.")
         return 0.0
     decimal_odds = (odds / 100) + 1 if odds > 0 else (100 / -odds) + 1
     b = decimal_odds - 1
@@ -147,22 +166,27 @@ def predict_pitcher_props(opponent, ip=1, avg_so=1.5, games=30):
     x = [[ip, avg_so, games, le_opponent.transform([opponent])[0]]]
     return np.clip(pitcher_props_model.predict(x)[0] / 10, 0.01, 0.99)
 
-def get_odds():
+def get_odds(max_retries=3, delay=5):
     url = "https://api.the-odds-api.com/v4/sports/baseball_mlb/odds/"
-    try:
-        res = requests.get(url, params={
-            'apiKey': API_KEY, 'regions': 'us',
-            'bookmakers': 'fanduel,draftkings', 'markets': 'h2h,totals',
-            'oddsFormat': 'american'
-        })
-        res.raise_for_status()
-        logger.info("Successfully fetched odds data.")
-        remaining = res.headers.get('x-requests-remaining', 'Unknown')
-        logger.info(f"API requests remaining: {remaining}")
-        return res.json()
-    except Exception as e:
-        logger.error(f"API Error: {e}")
-        return []
+    for attempt in range(max_retries):
+        try:
+            res = requests.get(url, params={
+                'apiKey': API_KEY, 'regions': 'us',
+                'bookmakers': 'fanduel,draftkings', 'markets': 'h2h,totals',
+                'oddsFormat': 'american'
+            }, timeout=10)
+            res.raise_for_status()
+            logger.info("Successfully fetched odds data.")
+            remaining = res.headers.get('x-requests-remaining', 'Unknown')
+            logger.info(f"API requests remaining: {remaining}")
+            return res.json()
+        except Exception as e:
+            logger.error(f"API Error (attempt {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+    logger.error("Failed to fetch odds data after retries.")
+    return []
 
 @cache.memoize(timeout=300)
 def run_daily_predictions():
@@ -184,11 +208,12 @@ def run_daily_predictions():
     game_df = pd.read_csv('mlb_data/mlb_games.csv')
     logger.info(f"Loaded mlb_games.csv with {len(game_df)} records.")
 
+    unmatched_games = []
     for game in odds_data:
         try:
             home = smart_team_match(game['home_team'])
             away = smart_team_match(game['away_team'])
-            logger.debug(f"Processing game: {home} vs {away}")
+            logger.info(f"Processing game: {home} vs {away} (API ID: {game['id']})")
 
             # Handle commence_time with fallback
             try:
@@ -201,6 +226,7 @@ def run_daily_predictions():
             row = game_df[(game_df['home_team_name'] == home) & (game_df['away_team_name'] == away)]
             if row.empty:
                 logger.warning(f"No game data found for {home} vs {away} in mlb_games.csv")
+                unmatched_games.append(f"{home} vs {away}")
                 continue
 
             venue = row.iloc[0].get('venue', 'Unknown')
@@ -215,12 +241,17 @@ def run_daily_predictions():
 
             for bookmaker in game['bookmakers']:
                 bm = bookmaker['title']
+                logger.debug(f"Processing bookmaker: {bm}")
                 seen_points = set()
                 added_ml = False
 
                 for market in bookmaker['markets']:
+                    logger.debug(f"Processing market: {market['key']} for {bm}")
                     for outcome in market['outcomes']:
                         odds = int(outcome.get('price', 0))
+                        if odds == 0:
+                            logger.warning(f"Skipping outcome with zero odds: {outcome}")
+                            continue
                         implied = convert_odds_to_implied_prob(odds)
                         key = (game['id'], market['key'], bm, outcome.get('name'), outcome.get('point', ''))
 
@@ -246,9 +277,11 @@ def run_daily_predictions():
             results.append(format_output(commence_time, f"{home} vs {away}", "Strikeouts Bet", "Model", 100, 0.5, strikeouts_prob, calculate_ev(strikeouts_prob, 0.5, 100), suggest_wager(strikeouts_prob, 100), strikeouts_bet="OVER" if strikeouts_prob > 0.5 else "UNDER"))
             results.append(format_output(commence_time, f"{home} vs {away}", "Pitcher Props Bet", "Model", 100, 0.5, pitcher_props_prob, calculate_ev(pitcher_props_prob, 0.5, 100), suggest_wager(pitcher_props_prob, 100), pitcher_props_bet=pitcher_name))
         except Exception as e:
-            logger.error(f"Game error for {home} vs {away}: {e}")
+            logger.error(f"Game error for {home} vs {away} (API ID: {game.get('id', 'unknown')}): {e}", exc_info=True)
             continue
 
+    if unmatched_games:
+        logger.error(f"Unmatched games: {', '.join(unmatched_games)}")
     save_to_json(results)
     logger.info(f"Generated {len(results)} predictions.")
     cache.set('predictions', results, timeout=300)
@@ -279,8 +312,9 @@ def results():
         logger.info("No cached results. Fetching new data.")
         data = run_daily_predictions()
 
-    today = datetime.now(eastern_tz).strftime('%Y-%m-%d')
-    data = [r for r in data if r['Date'].startswith(today)]
+    # Filter by date to avoid timezone issues
+    today = datetime.now(eastern_tz).date()
+    data = [r for r in data if datetime.fromisoformat(r['Timestamp']).date() == today]
     bookmaker = request.args.get('bookmaker')
     bet_type = request.args.get('bet_type')
     if bookmaker:
@@ -310,8 +344,8 @@ def top_bets():
         logger.info("No cached top bets. Fetching new data.")
         data = run_daily_predictions()
 
-    today = datetime.now(eastern_tz).strftime('%Y-%m-%d')
-    data = [r for r in data if r['Date'].startswith(today)]
+    today = datetime.now(eastern_tz).date()
+    data = [r for r in data if datetime.fromisoformat(r['Timestamp']).date() == today]
     data = sorted(data, key=lambda x: float(x['EV %'].rstrip('%')), reverse=True)[:3]
     return render_template("topbets.html", results=data)
 
